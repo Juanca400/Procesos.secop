@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SECOP">
+<meta name="color-scheme" content="light dark">
+<title>Procesos SECOP</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --card:#ffffff; --txt:#1c1f24; --mut:#646b76; --line:#e2e5ea;
+    --acc:#1b5fd1; --acc-txt:#ffffff; --star:#b7791f; --starbg:#fff4d6; --new:#1a7f4b; --newbg:#dff5e8;
+    --err:#a32020; --errbg:#fde8e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#111418; --card:#1b1f25; --txt:#eef0f3; --mut:#9aa3af; --line:#2c323b;
+      --acc:#5b9cff; --acc-txt:#0b1220; --star:#f2c14e; --starbg:#3a2f12; --new:#58d68d; --newbg:#143626;
+      --err:#ff9b9b; --errbg:#3a1717;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--txt);
+    font:16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: var(--mut); font-size: 14px; margin: 0 0 14px; }
+  button.principal {
+    width:100%; padding:16px; font-size:18px; font-weight:600; border:0; border-radius:12px;
+    background:var(--acc); color:var(--acc-txt);
+  }
+  button.principal:disabled { opacity:.6; }
+  button.sec {
+    width:100%; padding:11px; font-size:15px; border:1px solid var(--line); border-radius:10px;
+    background:var(--card); color:var(--mut); margin:4px 0 8px;
+  }
+  details { background:var(--card); border:1px solid var(--line); border-radius:12px; margin:10px 0; padding:2px 14px; }
+  summary { padding:11px 0; font-weight:600; cursor:pointer; }
+  label { display:block; font-size:14px; color:var(--mut); margin:10px 0 4px; }
+  input[type=text], input[type=number], input[type=search], select {
+    width:100%; padding:10px; font-size:16px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg); color:var(--txt);
+  }
+  .fila { display:flex; gap:10px; } .fila > div { flex:1; }
+  .chk { display:flex; align-items:center; gap:8px; margin:8px 0; color:var(--txt); font-size:15px; }
+  .chk input { width:20px; height:20px; flex:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 10px; }
+  .chip { position:relative; display:inline-block; margin:0; }
+  .chip input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+  .chip span {
+    display:inline-block; padding:8px 12px; border:1px solid var(--line); border-radius:99px;
+    background:var(--bg); font-size:14px; color:var(--txt);
+  }
+  .chip input:checked + span { background:var(--acc); color:var(--acc-txt); border-color:var(--acc); font-weight:600; }
+  .chips.exc .chip input:checked + span { background:var(--errbg); color:var(--err); border-color:var(--err); }
+  .mini { font-size:13px; color:var(--mut); }
+  .mini a { color:var(--acc); text-decoration:none; font-weight:600; }
+  .nota { font-size:13px; color:var(--mut); margin:6px 0 10px; }
+  #estado { margin:12px 0; font-size:14px; color:var(--mut); min-height:20px; }
+  .aviso { background:var(--errbg); color:var(--err); border-radius:10px; padding:10px 12px; margin:8px 0; font-size:14px; }
+  .muni { max-height:260px; overflow-y:auto; border-top:1px solid var(--line); margin-top:6px; }
+  .muni label.fila-m { display:flex; align-items:center; gap:10px; margin:0; padding:9px 2px; border-bottom:1px solid var(--line); color:var(--txt); font-size:15px; }
+  .muni label.fila-m input { width:20px; height:20px; flex:none; }
+  .muni label.fila-m span { flex:1; }
+  .muni label.fila-m em { font-style:normal; color:var(--mut); font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:10px 0; }
+  .card.prio { border-color: var(--star); }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  .tag { font-size:12px; padding:2px 8px; border-radius:99px; background:var(--bg); color:var(--mut); border:1px solid var(--line); }
+  .tag.star { background:var(--starbg); color:var(--star); border-color:var(--star); font-weight:600; }
+  .tag.new { background:var(--newbg); color:var(--new); border-color:var(--new); font-weight:600; }
+  .ent { font-weight:600; }
+  .mun { color:var(--mut); font-size:14px; }
+  .obj { margin:6px 0; font-size:15px; }
+  .datos { font-size:14px; color:var(--mut); }
+  .datos b { color:var(--txt); }
+  a.abrir {
+    display:block; text-align:center; margin-top:10px; padding:11px; border-radius:10px;
+    border:1px solid var(--acc); color:var(--acc); text-decoration:none; font-weight:600;
+  }
+  .pie { color:var(--mut); font-size:12px; margin:20px 0 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Procesos SECOP</h1>
+  <p class="sub">SECOP I y SECOP II · datos abiertos de datos.gov.co</p>
+
+  <button id="buscar" class="principal">Buscar procesos</button>
+
+  <div id="filtros">
+    <details open>
+      <summary>📍 Dónde buscar</summary>
+      <label for="depto">Departamento</label>
+      <select id="depto"></select>
+
+      <label>Fuentes</label>
+      <div class="chk"><input type="checkbox" id="fS2" checked><span>SECOP II</span></div>
+      <div class="chk"><input type="checkbox" id="fS1" checked><span>SECOP I</span></div>
+
+      <label for="zonas">Zonas prioritarias ⭐ (separadas por coma)</label>
+      <input type="text" id="zonas" value="Popayán, Coconuco, Puracé, Silvia, Rosas, Piendamó, Cajibío, Timbío, Totoró, Sotará, El Tambo">
+      <div class="chk"><input type="checkbox" id="soloPrio"><span>Mostrar solo zonas prioritarias</span></div>
+
+      <label for="entidades">Entidades (separadas por coma; vacío = todas)</label>
+      <input type="text" id="entidades" placeholder="Gobernación, Alcaldía de Silvia">
+    </details>
+
+    <details>
+      <summary>📄 Tipo de proceso</summary>
+      <div id="modalidades" class="chips"></div>
+    </details>
+
+    <details>
+      <summary>🔎 Palabras clave: incluir</summary>
+      <p class="nota">Marca las categorías que te interesan. Se muestran los procesos que mencionen alguna de sus palabras. Sin ninguna marcada, se muestran todos.</p>
+      <div class="mini"><a href="#" id="incTodas">Marcar todas</a> · <a href="#" id="incNinguna">Ninguna</a></div>
+      <div id="catInc" class="chips"></div>
+      <label for="incluir">Otras palabras (separadas por coma)</label>
+      <input type="text" id="incluir" placeholder="ej. cubierta, pupitres, toldo">
+    </details>
+
+    <details>
+      <summary>🚫 Palabras clave: descartar</summary>
+      <p class="nota">Se descartan los procesos que mencionen alguna palabra de las categorías marcadas. Si una categoría está en Incluir y en Descartar, gana Descartar.</p>
+      <div id="catExc" class="chips exc"></div>
+      <label for="excluir">Otras palabras a descartar (separadas por coma)</label>
+      <input type="text" id="excluir" placeholder="ej. vigilancia">
+    </details>
+
+    <details>
+      <summary>💰 Valor, fechas y orden</summary>
+      <div class="fila">
+        <div><label for="vmin">Valor mínimo ($)</label><input type="number" id="vmin" inputmode="numeric" placeholder="sin límite"></div>
+        <div><label for="vmax">Valor máximo ($)</label><input type="number" id="vmax" inputmode="numeric" placeholder="sin límite"></div>
+      </div>
+      <div class="fila">
+        <div><label for="diasS2">Días atrás (SECOP II)</label><input type="number" id="diasS2" inputmode="numeric" value="10" min="1" max="60"></div>
+        <div><label for="diasS1">Días atrás (SECOP I)</label><input type="number" id="diasS1" inputmode="numeric" value="5" min="1" max="60"></div>
+      </div>
+      <label for="cierraDias">Que cierren en máximo (días; solo SECOP II)</label>
+      <input type="number" id="cierraDias" inputmode="numeric" placeholder="sin límite" min="0">
+      <label for="orden">Ordenar por</label>
+      <select id="orden">
+        <option value="prio">Zonas prioritarias primero</option>
+        <option value="reciente">Más recientes</option>
+        <option value="cierre">Cierran más pronto</option>
+        <option value="valor">Mayor valor</option>
+      </select>
+    </details>
+
+    <button id="limpiar" class="sec">Restablecer filtros</button>
+  </div>
+
+  <div id="estado"></div>
+  <div id="avisos"></div>
+
+  <div id="panelMuni" hidden>
+    <details open>
+      <summary>🏘️ Municipios</summary>
+      <div class="chk"><input type="checkbox" id="muniTodos" checked><span><b>Seleccionar todos</b></span></div>
+      <div class="chk"><input type="checkbox" id="muniMencion" checked><span>También incluir procesos que mencionen el municipio en su objeto</span></div>
+      <div id="muniLista" class="muni"></div>
+    </details>
+    <input type="search" id="q" placeholder="Buscar en los resultados…">
+  </div>
+
+  <div id="lista"></div>
+
+  <p class="pie">Los datos abiertos tienen algo de retraso. En SECOP I la fecha de cierre no está en esos datos: abre el proceso para verla. Confirma siempre en el portal antes de ofertar.</p>
+</main>
+
+<script>
+const BASE = "https://www.datos.gov.co/resource/";
+const DS2 = "p6dx-8zbt";   // SECOP II - Procesos de contratación
+const DS1 = "f789-7hwg";   // SECOP I - Procesos de compra pública
+const MAX_TARJETAS = 300;
+
+// [nombre, tipo de comparación, texto sin tildes que se busca en el dato]
+const DEPARTAMENTOS = [
+  ["Amazonas","like","AMAZONAS"], ["Antioquia","like","ANTIOQUIA"], ["Arauca","like","ARAUCA"],
+  ["Atlántico","like","ATL"], ["Bogotá D.C.","like","BOGOT"], ["Bolívar","like","BOL"],
+  ["Boyacá","like","BOYAC"], ["Caldas","like","CALDAS"], ["Caquetá","like","CAQUET"],
+  ["Casanare","like","CASANARE"], ["Cauca","eq","CAUCA"], ["Cesar","like","CESAR"],
+  ["Chocó","like","CHOC"], ["Córdoba","like","RDOBA"], ["Cundinamarca","like","CUNDINAMARCA"],
+  ["Guainía","like","GUAIN"], ["Guaviare","like","GUAVIARE"], ["Huila","like","HUILA"],
+  ["La Guajira","like","GUAJIRA"], ["Magdalena","like","MAGDALENA"], ["Meta","eq","META"],
+  ["Nariño","like","NARI"], ["Norte de Santander","like","NORTE DE SANTANDER"], ["Putumayo","like","PUTUMAYO"],
+  ["Quindío","like","QUIND"], ["Risaralda","like","RISARALDA"], ["San Andrés y Providencia","like","SAN ANDR"],
+  ["Santander","eq","SANTANDER"], ["Sucre","like","SUCRE"], ["Tolima","like","TOLIMA"],
+  ["Valle del Cauca","like","VALLE"], ["Vaupés","like","VAUP"], ["Vichada","like","VICHADA"]
+];
+
+const MUNICIPIOS_CAUCA = ["Almaguer","Argelia","Balboa","Bolívar","Buenos Aires","Cajibío","Caldono","Caloto",
+  "Corinto","El Tambo","Florencia","Guachené","Guapi","Inzá","Jambaló","La Sierra","La Vega","López de Micay",
+  "Mercaderes","Miranda","Morales","Padilla","Páez","Patía","Piamonte","Piendamó","Popayán","Puerto Tejada",
+  "Puracé","Rosas","San Sebastián","Santa Rosa","Santander de Quilichao","Silvia","Sotará","Suárez","Sucre",
+  "Timbío","Timbiquí","Toribío","Totoró","Villa Rica"];
+// Nombres con los que también se conocen o se mencionan algunos municipios
+const ALIAS_MUNI = { "PURACE":["Coconuco"], "PAEZ":["Belalcázar"], "PATIA":["El Bordo"],
+                     "SOTARA":["Paispamba"], "SANTANDER DE QUILICHAO":["Quilichao"] };
+
+const MODALIDADES = {
+  "MINIMA CUANTIA": "Mínima cuantía",
+  "SELECCION ABREVIADA": "Selección abreviada",
+  "LICITACION PUBLICA": "Licitación pública",
+  "CONCURSO DE MERITOS": "Concurso de méritos",
+  "REGIMEN ESPECIAL": "Régimen especial"
+};
+
+// Las palabras se buscan al inicio de una palabra del objeto (aseo encuentra "aseos", no "paseo")
+const CATEGORIAS = {
+  construccion: { icono:"🏗️", nombre:"Construcción y obras", palabras:["construcción","obra","adecuación","mejoramiento","rehabilitación","pavimentación","placa huella","alcantarillado","cubierta","cerramiento","demolición","reforzamiento","edificación","urbanismo","andén","muro de contención","puente","cancha","polideportivo","ampliación"] },
+  interventoria: { icono:"📋", nombre:"Interventoría y consultoría", palabras:["interventoría","supervisión","consultoría","estudios y diseños","diseño","topografía","auditoría","diagnóstico"] },
+  adquisicion: { icono:"📦", nombre:"Adquisición y suministro", palabras:["adquisición","suministro","compra","compraventa","provisión","abastecimiento"] },
+  dotacion: { icono:"🪑", nombre:"Dotación y mobiliario", palabras:["dotación","mobiliario","muebles","pupitre","escritorio","silla","tablero","uniforme","menaje","kit"] },
+  papeleria: { icono:"✏️", nombre:"Papelería y oficina", palabras:["papelería","útiles","oficina","tóner","impresora","fotocopia","tinta","resma","archivo"] },
+  tecnologia: { icono:"💻", nombre:"Tecnología y sistemas", palabras:["software","computador","equipo de cómputo","portátil","tablet","tecnología","internet","conectividad","wifi","servidor","licencia","cableado estructurado","cámaras de seguridad","videovigilancia"] },
+  salud: { icono:"💊", nombre:"Salud y medicamentos", palabras:["medicamento","insumos médicos","dispositivos médicos","hospital","ambulancia","odontológico","laboratorio clínico","material médico","botiquín","biomédico","salud"] },
+  alimentacion: { icono:"🍽️", nombre:"Alimentación", palabras:["alimentación","refrigerio","restaurante escolar","víveres","mercados","canasta","almuerzo"] },
+  aseo: { icono:"🧹", nombre:"Aseo y limpieza", palabras:["aseo","limpieza","desinfección","fumigación","cafetería"] },
+  transporte: { icono:"🚗", nombre:"Transporte y vehículos", palabras:["vehículo","transporte","combustible","gasolina","repuestos","llantas","maquinaria","volqueta","motocicleta","retroexcavadora","camioneta"] },
+  mantenimiento: { icono:"🔧", nombre:"Mantenimiento y reparación", palabras:["mantenimiento","reparación","reposición","restauración","correctivo","preventivo","arreglo"] },
+  servicios_prof: { icono:"👤", nombre:"Servicios profesionales", palabras:["servicios profesionales","prestación de servicios profesionales","apoyo a la gestión","asesoría","asesoramiento","contratista","prestación de servicios de apoyo"] },
+  educacion: { icono:"🎓", nombre:"Educación y capacitación", palabras:["capacitación","formación","diplomado","material didáctico","biblioteca","libros","cursos","taller"] },
+  deporte: { icono:"⚽", nombre:"Cultura, deporte y recreación", palabras:["deporte","deportivo","recreación","cultural","festival","concierto","instrumentos musicales","balones","parque infantil","gimnasio","evento"] },
+  agro: { icono:"🌱", nombre:"Agropecuario y ambiental", palabras:["agropecuario","semillas","fertilizante","insumos agrícolas","vivero","reforestación","ambiental","residuos","ganado","piscicultura","abono","siembra"] },
+  seguridad: { icono:"🚒", nombre:"Seguridad y emergencias", palabras:["seguridad","vigilancia","bomberos","emergencia","gestión del riesgo","extintor","señalización","ayudas humanitarias"] },
+  publicidad: { icono:"📣", nombre:"Publicidad y logística", palabras:["publicidad","divulgación","impresión","pendón","valla","material publicitario","logística","sonido","perifoneo"] },
+  energia: { icono:"⚡", nombre:"Energía e iluminación", palabras:["energía","eléctrico","luminaria","alumbrado","solar","transformador","subestación","planta eléctrica","iluminación"] },
+  agua: { icono:"💧", nombre:"Agua y saneamiento", palabras:["agua potable","acueducto","tanque","tubería","bomba","pozo","saneamiento","planta de tratamiento","hidráulico"] }
+};
+// Categorías que vienen marcadas en "Descartar" la primera vez
+const DESCARTAR_POR_DEFECTO = ["mantenimiento", "servicios_prof"];
+
+// ---------- utilidades ----------
+const norm = s => String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const lista = txt => String(txt || "").split(",").map(x => x.trim()).filter(Boolean);
+
+const _reCache = new Map();
+function reInicio(w) {           // la palabra debe empezar una palabra del texto
+  const k = norm(w).trim();
+  if (!_reCache.has(k)) _reCache.set(k, new RegExp("\\b" + reEsc(k)));
+  return _reCache.get(k);
+}
+function reExacta(w) {           // palabra completa
+  return new RegExp("\\b" + reEsc(norm(w).trim()) + "\\b");
+}
+function bonito(s) {
+  const chicas = new Set(["de", "del", "la", "las", "los", "y", "el"]);
+  return String(s || "").trim().toLowerCase().split(/\s+/).map((w, i) =>
+    (i > 0 && chicas.has(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+// Hora de Colombia (UTC-5) representada como "UTC" para poder comparar con las fechas de SECOP
+const ahoraCO = () => Date.now() - 5 * 3600 * 1000;
+function parseF(s) {
+  const m = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/.exec(s || "");
+  return m ? Date.parse(m[1] + "Z") : null;
+}
+function fmtF(ms) {
+  if (ms == null) return "";
+  const d = new Date(ms), p = n => String(n).padStart(2, "0");
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+function fmtFecha(ms) { return ms == null ? "" : fmtF(ms).slice(0, 10); }
+function pesos(v) {
+  const n = parseFloat(v);
+  if (!isFinite(n)) return "N/D";
+  return "$" + Math.round(n).toLocaleString("es-CO");
+}
+function desde(dias) {
+  return new Date(ahoraCO() - dias * 86400000).toISOString().slice(0, 10) + "T00:00:00";
+}
+function zonasDe(zonas, ...textos) {
+  const t = " " + norm(textos.join(" ")) + " ";
+  return zonas.filter(z => reExacta(z).test(t));
+}
+function urlDe(v) { return v && typeof v === "object" ? (v.url || "") : (v || ""); }
+
+// ---------- consulta ----------
+function whereDepto(d) {
+  return d[1] === "eq" ? `upper(departamento_entidad)='${d[2]}'`
+                       : `upper(departamento_entidad) like '%${d[2]}%'`;
+}
+async function consultar(ds, where, order) {
+  const params = new URLSearchParams({ "$where": where, "$order": order, "$limit": "5000" });
+  const r = await fetch(BASE + ds + ".json?" + params.toString());
+  if (!r.ok) throw new Error("respuesta " + r.status);
+  return r.json();
+}
+
+function modalidadOk(m, f) {
+  const n = norm(m);
+  return f.modalidades.some(x => n.includes(x));
+}
+
+function procesarS2(filas, f) {
+  const ahora = ahoraCO(), out = [];
+  for (const r of filas) {
+    if (!modalidadOk(r.modalidad_de_contratacion, f)) continue;
+    const ap = norm(r.estado_de_apertura_del_proceso);
+    if (ap && ap !== "ABIERTO") continue;
+    const est = norm(r.estado_del_procedimiento);
+    if (["ADJUDIC", "CANCEL", "DESIERT", "CELEBR", "TERMIN", "BORRADOR"].some(x => est.includes(x))) continue;
+    const cierre = parseF(r.fecha_de_recepcion_de);
+    if (cierre != null && cierre < ahora) continue;
+    out.push({
+      id: "S2-" + (r.id_del_proceso || r.referencia_del_proceso),
+      fuente: "SECOP II", modalidad: r.modalidad_de_contratacion,
+      entidad: r.entidad, municipio: r.ciudad_entidad,
+      objeto: r.descripci_n_del_procedimiento || r.nombre_del_procedimiento,
+      texto: [r.nombre_del_procedimiento, r.descripci_n_del_procedimiento].filter(Boolean).join(" "),
+      valor: r.precio_base, cierre, publicado: r.fecha_de_publicacion_del || "",
+      ref: r.referencia_del_proceso, url: urlDe(r.urlproceso)
+    });
+  }
+  return out;
+}
+
+function procesarS1(filas, f) {
+  const out = [];
+  for (const r of filas) {
+    if (!modalidadOk(r.modalidad_de_contratacion, f)) continue;
+    if (norm(r.estado_del_proceso) !== "CONVOCADO") continue;
+    const ref = r.numero_de_constancia;
+    out.push({
+      id: "S1-" + (r.uid || ref),
+      fuente: "SECOP I", modalidad: r.modalidad_de_contratacion,
+      entidad: r.nombre_entidad, municipio: r.municipio_entidad,
+      objeto: r.detalle_del_objeto_a_contratar || r.objeto_del_proceso,
+      texto: [r.detalle_del_objeto_a_contratar, r.objeto_del_proceso].filter(Boolean).join(" "),
+      valor: r.cuantia_proceso, cierre: null, publicado: r.fecha_de_cargue_en_el_secop || "",
+      ref: ref,
+      url: ref ? "https://www.contratos.gov.co/consultas/detalleProceso.do?numConstancia=" + encodeURIComponent(ref)
+               : urlDe(r.ruta_proceso_en_secop_i)
+    });
+  }
+  return out;
+}
+
+// Filtros que se aplican al buscar (valor, palabras, zonas, entidades, cierre)
+function pasaFiltros(p, f) {
+  const v = parseFloat(p.valor);
+  if (isFinite(v)) {
+    if (f.vmin != null && v < f.vmin) return false;
+    if (f.vmax != null && v > f.vmax) return false;
+  }
+  const texto = norm(p.texto || p.objeto);
+  if (f.excluir.some(w => reInicio(w).test(texto))) return false;
+  if (f.incluir.length && !f.incluir.some(w => reInicio(w).test(texto))) return false;
+  if (f.soloPrio && !p.zonas.length) return false;
+  if (f.entidades.length && !f.entidades.some(e => norm(p.entidad).includes(norm(e)))) return false;
+  if (f.cierraDias != null && p.cierre != null && p.cierre > ahoraCO() + f.cierraDias * 86400000) return false;
+  return true;
+}
+
+function ordenar(items, modo) {
+  const pub = (a, b) => String(b.publicado).localeCompare(String(a.publicado));
+  const num = x => { const n = parseFloat(x); return isFinite(n) ? n : -1; };
+  if (modo === "reciente") return items.sort(pub);
+  if (modo === "valor") return items.sort((a, b) => num(b.valor) - num(a.valor));
+  if (modo === "cierre") return items.sort((a, b) => (a.cierre == null) - (b.cierre == null) || (a.cierre - b.cierre) || pub(a, b));
+  return items.sort((a, b) => (a.zonas.length ? 0 : 1) - (b.zonas.length ? 0 : 1) || pub(a, b));
+}
+
+// ---------- municipios ----------
+function construirMunicipios(items, depto) {
+  const mapa = new Map();
+  const agregar = nombre => {
+    const k = norm(nombre).trim();
+    if (k && !mapa.has(k)) mapa.set(k, { key: k, nombre: bonito(nombre) });
+  };
+  if (depto === "Cauca") MUNICIPIOS_CAUCA.forEach(agregar);
+  items.forEach(p => agregar(p.municipio));
+  const munis = [...mapa.values()];
+  const regs = munis.map(m => ({
+    key: m.key,
+    res: [m.key].concat((ALIAS_MUNI[m.key] || []).map(norm)).map(x => new RegExp("\\b" + reEsc(x) + "\\b"))
+  }));
+  items.forEach(p => {
+    p.keyCiudad = norm(p.municipio).trim();
+    const t = " " + norm(p.texto || p.objeto) + " ";
+    p.menciones = new Set();
+    regs.forEach(r => { if (r.res.some(re => re.test(t))) p.menciones.add(r.key); });
+  });
+  return munis;
+}
+
+function pasaMuni(p, sel, total, mencion) {
+  if (sel.size >= total) return true;
+  if (sel.has(p.keyCiudad)) return true;
+  if (mencion) for (const k of p.menciones) if (sel.has(k)) return true;
+  return false;
+}
+
+// ---------- pantalla ----------
+const $ = id => document.getElementById(id);
+const ESTADO = { base: [], munis: [], muniSel: new Set(), vistos: null, hubo: false };
+
+function marcados(sel) { return [...document.querySelectorAll(sel + " input:checked")].map(i => i.value); }
+
+function leerFiltros() {
+  const num = id => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+  const palabrasDe = keys => keys.flatMap(k => (CATEGORIAS[k] ? CATEGORIAS[k].palabras : []));
+  const dep = DEPARTAMENTOS.find(d => d[0] === $("depto").value) || DEPARTAMENTOS.find(d => d[0] === "Cauca");
+  return {
+    depto: dep,
+    modalidades: marcados("#modalidades"),
+    s2: $("fS2").checked, s1: $("fS1").checked,
+    diasS2: num("diasS2") || 10, diasS1: num("diasS1") || 5,
+    vmin: num("vmin"), vmax: num("vmax"), cierraDias: num("cierraDias"),
+    incluir: palabrasDe(marcados("#catInc")).concat(lista($("incluir").value)),
+    excluir: palabrasDe(marcados("#catExc")).concat(lista($("excluir").value)),
+    entidades: lista($("entidades").value), zonas: lista($("zonas").value),
+    soloPrio: $("soloPrio").checked
+  };
+}
+
+function guardarFiltros() {
+  try {
+    const f = {};
+    document.querySelectorAll("#filtros input, #filtros select").forEach(i => {
+      if (i.id) f[i.id] = i.type === "checkbox" ? i.checked : i.value;
+    });
+    localStorage.setItem("secop_filtros_v2", JSON.stringify(f));
+  } catch (e) {}
+}
+function cargarFiltros() {
+  try {
+    const f = JSON.parse(localStorage.getItem("secop_filtros_v2") || "null");
+    if (!f) return;
+    document.querySelectorAll("#filtros input, #filtros select").forEach(i => {
+      if (!i.id || !(i.id in f)) return;
+      if (i.type === "checkbox") i.checked = !!f[i.id]; else i.value = f[i.id];
+    });
+  } catch (e) {}
+}
+function cargarVistos() {
+  try { const v = JSON.parse(localStorage.getItem("secop_vistos") || "null"); return v ? new Set(v) : null; }
+  catch (e) { return null; }
+}
+function guardarVistos(ids) {
+  try { localStorage.setItem("secop_vistos", JSON.stringify([...ids].slice(-3000))); } catch (e) {}
+}
+
+function tarjeta(p, esNuevo) {
+  const etiquetas = [];
+  if (p.zonas.length) etiquetas.push(`<span class="tag star">⭐ ${esc(p.zonas.join(", "))}</span>`);
+  if (esNuevo) etiquetas.push(`<span class="tag new">NUEVO</span>`);
+  etiquetas.push(`<span class="tag">${esc(p.fuente)}</span>`);
+  etiquetas.push(`<span class="tag">${esc(p.modalidad || "")}</span>`);
+  const cierre = p.cierre != null ? `<b>${esc(fmtF(p.cierre))}</b>` : "ver en el enlace";
+  const pub = p.publicado ? ` · Publicado: ${esc(fmtFecha(parseF(p.publicado)))}` : "";
+  return `<div class="card${p.zonas.length ? " prio" : ""}">
+    <div class="tags">${etiquetas.join("")}</div>
+    <div class="ent">${esc(p.entidad)}</div>
+    <div class="mun">${esc(p.municipio)}</div>
+    <div class="obj">${esc(String(p.objeto || "").slice(0, 400))}</div>
+    <div class="datos">Valor: <b>${esc(pesos(p.valor))}</b> · Cierre: ${cierre}${pub}${p.ref ? " · Ref: " + esc(p.ref) : ""}</div>
+    ${p.url ? `<a class="abrir" href="${esc(p.url)}" target="_blank" rel="noopener">Abrir proceso</a>` : ""}
+  </div>`;
+}
+
+function renderMunis() {
+  const mencion = $("muniMencion").checked;
+  const cuentas = new Map();
+  for (const p of ESTADO.base) {
+    const ks = new Set([p.keyCiudad]);
+    if (mencion) p.menciones.forEach(k => ks.add(k));
+    ks.forEach(k => cuentas.set(k, (cuentas.get(k) || 0) + 1));
+  }
+  const filas = ESTADO.munis.map(m => Object.assign({ n: cuentas.get(m.key) || 0 }, m));
+  filas.sort((a, b) => ((b.n > 0) - (a.n > 0)) || (b.n - a.n) || a.nombre.localeCompare(b.nombre, "es"));
+  $("muniLista").innerHTML = filas.map(m =>
+    `<label class="fila-m"><input type="checkbox" data-k="${esc(m.key)}"${ESTADO.muniSel.has(m.key) ? " checked" : ""}><span>${esc(m.nombre)}</span><em>${m.n}</em></label>`
+  ).join("");
+  const todos = ESTADO.munis.length > 0 && ESTADO.munis.every(m => ESTADO.muniSel.has(m.key));
+  $("muniTodos").checked = todos;
+  $("muniTodos").indeterminate = !todos && ESTADO.muniSel.size > 0;
+}
+
+function render() {
+  if (!ESTADO.hubo) return;
+  const mencion = $("muniMencion").checked;
+  const q = norm($("q").value).trim();
+  const total = ESTADO.munis.length;
+  let items = ESTADO.base.filter(p =>
+    pasaMuni(p, ESTADO.muniSel, total, mencion) &&
+    (!q || norm([p.entidad, p.municipio, p.texto || p.objeto, p.ref].join(" ")).includes(q)));
+  ordenar(items, $("orden").value);
+
+  const vistos = ESTADO.vistos;
+  const nuevos = vistos ? items.filter(p => !vistos.has(p.id)).length : null;
+  const prio = items.filter(p => p.zonas.length).length;
+  $("lista").innerHTML = items.slice(0, MAX_TARJETAS).map(p => tarjeta(p, vistos ? !vistos.has(p.id) : false)).join("");
+  $("estado").textContent =
+    `${items.length} procesos` + (items.length !== ESTADO.base.length ? ` (de ${ESTADO.base.length})` : "") +
+    ` · ${prio} en zonas prioritarias` +
+    (nuevos != null ? ` · ${nuevos} nuevos desde tu última búsqueda` : "") +
+    (items.length > MAX_TARJETAS ? ` · mostrando los primeros ${MAX_TARJETAS}` : "") +
+    ` · actualizado ${ESTADO.hora}`;
+  if (!items.length) {
+    $("lista").innerHTML = `<div class="card">No hay procesos con estos filtros. Prueba ampliar los días, quitar palabras clave o marcar más municipios.</div>`;
+  }
+}
+
+async function buscar() {
+  const f = leerFiltros();
+  guardarFiltros();
+  $("avisos").innerHTML = "";
+  $("lista").innerHTML = "";
+  $("panelMuni").hidden = true;
+  ESTADO.hubo = false;
+  if (!f.modalidades.length) { $("estado").textContent = "Marca al menos un tipo de proceso en Filtros."; return; }
+  if (!f.s1 && !f.s2) { $("estado").textContent = "Marca al menos una fuente (SECOP I o II) en Filtros."; return; }
+
+  $("buscar").disabled = true;
+  $("estado").textContent = `Buscando en ${f.depto[0]}…`;
+
+  const tareas = [], nombres = [];
+  if (f.s2) {
+    nombres.push("SECOP II");
+    tareas.push(consultar(DS2, `${whereDepto(f.depto)} AND fecha_de_publicacion_del >= '${desde(f.diasS2)}'`,
+      "fecha_de_publicacion_del DESC").then(x => procesarS2(x, f)));
+  }
+  if (f.s1) {
+    nombres.push("SECOP I");
+    tareas.push(consultar(DS1, `${whereDepto(f.depto)} AND fecha_de_cargue_en_el_secop >= '${desde(f.diasS1)}'`,
+      "fecha_de_cargue_en_el_secop DESC").then(x => procesarS1(x, f)));
+  }
+
+  const res = await Promise.allSettled(tareas);
+  let items = [], fallas = 0;
+  res.forEach((r, i) => {
+    if (r.status === "fulfilled") items = items.concat(r.value);
+    else {
+      fallas++;
+      $("avisos").insertAdjacentHTML("beforeend",
+        `<div class="aviso">No pude consultar ${esc(nombres[i])} (${esc(r.reason && r.reason.message)}). Intenta de nuevo en un momento.</div>`);
+    }
+  });
+
+  if (fallas === res.length) {
+    $("estado").textContent = "No se pudo obtener información. Revisa tu conexión e intenta de nuevo.";
+    $("buscar").disabled = false;
+    return;
+  }
+
+  items.forEach(p => p.zonas = zonasDe(f.zonas, p.municipio, p.entidad, p.texto || p.objeto));
+  items = items.filter(p => pasaFiltros(p, f));
+
+  ESTADO.munis = construirMunicipios(items, f.depto[0]);
+  ESTADO.muniSel = new Set(ESTADO.munis.map(m => m.key));
+  ESTADO.base = items;
+  ESTADO.vistos = cargarVistos();
+  ESTADO.hora = fmtF(ahoraCO()).slice(11);
+  ESTADO.hubo = true;
+  $("q").value = "";
+  $("panelMuni").hidden = false;
+  renderMunis();
+  render();
+  guardarVistos(new Set([...(ESTADO.vistos || []), ...items.map(p => p.id)]));
+  $("buscar").disabled = false;
+}
+
+function chips(contenedor, entradas, prefijo, marcadas) {
+  $(contenedor).innerHTML = entradas.map(([clave, texto]) =>
+    `<label class="chip"><input type="checkbox" id="${prefijo}_${clave.replace(/\s+/g, "_")}" value="${esc(clave)}"${marcadas.includes(clave) ? " checked" : ""}><span>${esc(texto)}</span></label>`
+  ).join("");
+}
+
+function iniciar() {
+  $("depto").innerHTML = DEPARTAMENTOS.map(d =>
+    `<option value="${esc(d[0])}"${d[0] === "Cauca" ? " selected" : ""}>${esc(d[0])}</option>`).join("");
+  chips("modalidades", Object.entries(MODALIDADES), "mod", ["MINIMA CUANTIA"]);
+  const cats = Object.entries(CATEGORIAS).map(([k, c]) => [k, c.icono + " " + c.nombre]);
+  chips("catInc", cats, "inc", []);
+  chips("catExc", cats, "exc", DESCARTAR_POR_DEFECTO);
+  cargarFiltros();
+
+  $("buscar").addEventListener("click", buscar);
+  $("limpiar").addEventListener("click", () => {
+    try { localStorage.removeItem("secop_filtros_v2"); } catch (e) {}
+    location.reload();
+  });
+  const marcarTodas = valor => ev => {
+    ev.preventDefault();
+    document.querySelectorAll("#catInc input").forEach(i => i.checked = valor);
+  };
+  $("incTodas").addEventListener("click", marcarTodas(true));
+  $("incNinguna").addEventListener("click", marcarTodas(false));
+
+  $("muniLista").addEventListener("change", ev => {
+    const k = ev.target && ev.target.getAttribute && ev.target.getAttribute("data-k");
+    if (!k) return;
+    if (ev.target.checked) ESTADO.muniSel.add(k); else ESTADO.muniSel.delete(k);
+    renderMunis();
+    render();
+  });
+  $("muniTodos").addEventListener("change", ev => {
+    ESTADO.muniSel = ev.target.checked ? new Set(ESTADO.munis.map(m => m.key)) : new Set();
+    renderMunis();
+    render();
+  });
+  $("muniMencion").addEventListener("change", () => { renderMunis(); render(); });
+  $("q").addEventListener("input", render);
+  $("orden").addEventListener("change", () => { guardarFiltros(); render(); });
+}
+
+if (typeof document !== "undefined") iniciar();
+if (typeof module !== "undefined") module.exports = {
+  norm, parseF, fmtF, pesos, zonasDe, procesarS1, procesarS2, pasaFiltros, ordenar, desde,
+  tarjeta, construirMunicipios, pasaMuni, whereDepto, DEPARTAMENTOS, CATEGORIAS, bonito, reInicio,
+  ESTADO, buscar, iniciar, render
+};
+</script>
+</body>
+</html>
